@@ -17,4 +17,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push --force https://Meshkat-Shadik:$HF_TOKEN@huggingface.co/spaces/Meshkat-Shadik/bd-reverse-geocoding-api main
+          git push --force https://MeshkatShadik:$HF_TOKEN@huggingface.co/spaces/Meshkat-Shadik/bd-reverse-geocoding-api main
