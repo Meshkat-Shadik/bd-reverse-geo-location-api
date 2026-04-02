@@ -22,7 +22,7 @@ git lfs install
 
 ---
 
-## Method 1: Deploying via GitHub (Recommended)
+## Method 1: Automated Sync via GitHub Actions (Recommended)
 This is the best method if you want to keep your code open-source on GitHub and have Hugging Face automatically update whenever you push to GitHub.
 
 ### Step 1: Initialize Git and LFS in `v5_prod`
@@ -49,12 +49,51 @@ git push -u origin main
 ```
 *Note: The push might take a few minutes depending on your internet speed, as it uploads ~450MB of LFS data.*
 
-### Step 3: Connect Hugging Face to GitHub
-1. Go to **Hugging Face > Create New Space**.
-2. Select **Docker** as the Space SDK (Blank template).
-3. Under the "Space hardware" section, the **Free tier (16GB RAM, 2 vCPU)** is more than enough.
-4. Instead of creating a blank space, look for the option or button that says **"Duplicate from GitHub"** or you can link your GitHub account in your HF Profile settings and provision the Space directly from your repo.
-5. Hugging Face will pull your Dockerfile, download the LFS `.bin` files, build the image, and host it!
+### Step 3: Prepare your Hugging Face Space
+* Create a new Space on Hugging Face (choose **Docker** > **Blank**).
+* **Important:** Hugging Face requires a specific YAML header at the top of your `README.md` to configure the Space. Ensure your GitHub repo's `README.md` includes this header, or your Space won't build.
+
+### Step 4: Get your Hugging Face Token
+1. Go to your [Hugging Face Settings > Tokens](https://huggingface.co/settings/tokens).
+2. Create a new **Write** token.
+3. Copy this token; you’ll need it for GitHub.
+
+### Step 5: Add the Token to GitHub Secrets
+1. Go to your repository on GitHub.
+2. Click **Settings** > **Secrets and variables** > **Actions**.
+3. Click **New repository secret**.
+4. Name it `HF_TOKEN` and paste your Hugging Face token as the value.
+
+### Step 6: Create the Sync Workflow
+In your GitHub repository, create a new file at `.github/workflows/sync_to_hf.yml` and paste the following code:
+
+```yaml
+name: Sync to Hugging Face hub
+on:
+  push:
+    branches: [main]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+      - name: Push to hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git push --force https://YOUR_HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/YOUR_HF_USERNAME/YOUR_SPACE_NAME main
+```
+
+### ⚠️ Important Edits for the Workflow:
+* Replace `YOUR_HF_USERNAME` with your actual Hugging Face username.
+* Replace `YOUR_SPACE_NAME` with the name of your Space.
+* If your GitHub default branch is `master` instead of `main`, change the last line to `master:main`.
 
 ---
 
